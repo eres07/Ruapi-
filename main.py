@@ -44,6 +44,11 @@ FREE_CREDITS = 100
 
 BASE_DIR = Path(__file__).parent
 DATA_DIR = os.environ.get("DATA_DIR")
+if not DATA_DIR and os.environ.get("VERCEL"):
+    # Vercel serverless: only /tmp is writable; the repo dir is read-only,
+    # so a DB there makes every key/credits call fail with 500.
+    # /tmp is per-instance and ephemeral, so credits are demo-only on Vercel.
+    DATA_DIR = "/tmp"
 if DATA_DIR:
     Path(DATA_DIR).mkdir(parents=True, exist_ok=True)
 DB_PATH = Path(DATA_DIR) / "ruapi.db" if DATA_DIR else BASE_DIR / "ruapi.db"
