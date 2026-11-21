@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ruapi
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: POLLINATIONS_ENABLED
+        value: "1"

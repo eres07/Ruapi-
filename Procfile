@@ -1,0 +1,1 @@
+web: /app/.venv/bin/python /app/main.py

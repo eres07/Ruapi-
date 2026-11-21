@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ruapi — Hindi + English AI API (v1)</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:720px;margin:40px auto;padding:0 16px;line-height:1.5;color:#111}
+  h1{font-size:28px} code{background:#f0f0f0;padding:2px 6px;border-radius:4px}
+  pre{background:#111;color:#e8e8e8;padding:14px;border-radius:8px;overflow:auto}
+  input,select,button{font-size:16px;padding:10px;margin:4px 0;border-radius:8px;border:1px solid #ccc}
+  input,select{width:100%;box-sizing:border-box}
+  button{background:#111;color:#fff;border:none;cursor:pointer}
+  #out{white-space:pre-wrap;background:#f7f7f7;padding:14px;border-radius:8px;min-height:60px}
+  .muted{color:#666}
+</style>
+</head>
+<body>
+<h1>ruapi 🇮🇳</h1>
+<p><strong>Note (21 Nov 2026):</strong> the live API server at ruapi.embarko.app is not up yet — Embarko's Python runtime keeps crashing on start (even a trivial FastAPI test app crashes the same way), so the API code is ready and fully tested locally, but the live deploy is still being fixed. Run it locally meanwhile — see the README in <code>~/workspace/ruapi/</code>. The playground below works against a local server at <code>http://localhost:8000</code> too (just open this page from there).</p>
+<p>Simple Hindi + English AI API — v1, free, with credits.<br>
+<span class="muted">1 credit per chat call. New keys get 100 free credits. Demo brain for now — plug in a real model later with <code>GROQ_API_KEY</code> or <code>SARVAM_API_KEY</code>.</span></p>
+
+<h2>Try it here</h2>
+<p><button id="keyBtn">1. Get a free API key (100 credits)</button>
+<span id="keyOut" class="muted"></span></p>
+<label>Language
+<select id="lang"><option value="auto">Auto (detect)</option><option value="hi">Hindi — हिंदी</option><option value="en">English</option></select></label>
+<input id="msg" placeholder="Ask something… e.g. translate hello to Hindi / नमस्ते, AI kya hai samjhao">
+<button id="askBtn">2. Ask ruapi (uses 1 credit)</button>
+<p><button id="credBtn">Check my credits</button> <span id="credOut"></span></p>
+<div id="out">Your answer will appear here.</div>
+
+<h2>API</h2>
+<pre>GET  /health
+POST /v1/keys            # → {"api_key": "ruapi_...", "credits": 100}
+GET  /v1/credits         # Header: Authorization: Bearer &lt;key&gt;
+POST /v1/chat            # Header: Authorization: Bearer &lt;key&gt;
+                         # Body: {"message": "...", "language": "hi"|"en"}</pre>
+
+<h2>curl examples</h2>
+<pre># Health
+curl https://ruapi.embarko.app/health
+
+# Get a key (100 free credits)
+curl -X POST https://ruapi.embarko.app/v1/keys
+
+# Chat in Hindi (replace KEY)
+curl -X POST https://ruapi.embarko.app/v1/chat \
+  -H "Authorization: Bearer KEY" -H "Content-Type: application/json" \
+  -d '{"message": "नमस्ते, AI kya hai samjhao", "language": "hi"}'
+
+# Chat in English
+curl -X POST https://ruapi.embarko.app/v1/chat \
+  -H "Authorization: Bearer KEY" -H "Content-Type: application/json" \
+  -d '{"message": "translate hello to Hindi", "language": "en"}'
+
+# Credits left
+curl https://ruapi.embarko.app/v1/credits -H "Authorization: Bearer KEY"</pre>
+<p class="muted">Locally, replace https://ruapi.embarko.app with http://localhost:8000 — same API.</p>
+
+<script>
+let key = localStorage.getItem('ruapi_key') || '';
+const out = document.getElementById('out');
+if (key) document.getElementById('keyOut').textContent = 'Key saved: ' + key.slice(0,12) + '…';
+document.getElementById('keyBtn').onclick = async () => {
+  const r = await fetch('/v1/keys', {method:'POST'});
+  const j = await r.json();
+  key = j.api_key; localStorage.setItem('ruapi_key', key);
+  document.getElementById('keyOut').textContent = 'Key: ' + key + ' (' + j.credits + ' credits)';
+  out.textContent = 'Key created! Now ask something below.';
+};
+document.getElementById('askBtn').onclick = async () => {
+  if (!key) { out.textContent = 'Get a free key first (button 1).'; return; }
+  const msg = document.getElementById('msg').value.trim();
+  if (!msg) { out.textContent = 'Type a message first.'; return; }
+  const lang = document.getElementById('lang').value;
+  const body = {message: msg}; if (lang !== 'auto') body.language = lang;
+  const r = await fetch('/v1/chat', {method:'POST', headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  const j = await r.json();
+  out.textContent = r.ok ? (j.reply + '\n\n— ' + j.model + ' · credits left: ' + j.credits_remaining) : ('Error ' + r.status + ': ' + (j.detail || JSON.stringify(j)));
+};
+document.getElementById('credBtn').onclick = async () => {
+  if (!key) { document.getElementById('credOut').textContent = 'No key yet.'; return; }
+  const r = await fetch('/v1/credits', {headers:{'Authorization':'Bearer '+key}});
+  const j = await r.json();
+  document.getElementById('credOut').textContent = r.ok ? (j.credits + ' credits left') : ('Error ' + r.status);
+};
+</script>
+</body>
+</html>
