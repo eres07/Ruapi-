@@ -1,0 +1,7 @@
+# Voice-host only. Do NOT merge into requirements.txt — the Vercel text API
+# must not try to install torch/kokoro.
+fastapi==0.115.6
+uvicorn==0.34.0
+kokoro
+soundfile
+numpy
