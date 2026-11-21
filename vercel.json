@@ -1,1 +1,1 @@
-{"rewrites":[{"destination":"/api/index.py","source":"/(.*)"}]}
+{"$schema":"https://openapi.vercel.sh/vercel.json","rewrites":[{"destination":{"service":"ruapi"},"source":"/(.*)"}],"services":{"ruapi":{"buildCommand":"pip install -r requirements.txt","framework":"fastapi","root":"."}}}
