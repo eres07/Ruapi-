@@ -32,9 +32,17 @@ from pathlib import Path
 
 import numpy as np
 import soundfile as sf
+import torch
 from fastapi import FastAPI, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+# Fix (2026-11-22, verified on Altare sg-sgp12): torch's MKLDNN backend
+# crashes Kokoro's LSTM with a floating point exception (SIGFPE, exit 136)
+# on this host, for every voice (Hindi and English). Disabling MKLDNN
+# makes synthesis work — slower (~15 min for a 2-second line with MKLDNN
+# off on that small CPU), but correct. Must run before any Kokoro import.
+torch.backends.mkldnn.enabled = False
 
 # Reuse the credits DB + key helpers from the text API (same ruapi.db
 # file when both apps run from the same directory).
